@@ -41,6 +41,7 @@
 *.su
 *.idb
 *.pdb
+sdkconfig.old
 
 # Kernel Module Compile Results
 *.mod*
