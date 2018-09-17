@@ -52,5 +52,8 @@ Module.symvers
 Mkfile.old
 dkms.conf
 
+#esp-idf
+build/
+
 # Operating System
 .DS_Store
