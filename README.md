@@ -13,7 +13,7 @@ Pull requests are welcome...
 
 After two days with a Logic Analyzer hooked up, the only difference I could see was this delay or clock pulse between each byte on a working implementation.
 
-![Logic Analyzer Screenshot](https://imgur.com/a/GD3RvAK)
+[Logic Analyzer Screenshot](https://imgur.com/a/GD3RvAK)
 
 ### Notes on Fault Register Reads
 
