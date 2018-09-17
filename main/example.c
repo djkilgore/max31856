@@ -45,6 +45,9 @@ void app_main() {
     thermocouple_set_type(&max31856, MAX31856_TCTYPE_K);
     thermocouple_get_type(&max31856);
 
+    // Set Temperature Fault Limits
+    //thermocouple_set_temperature_fault(&max31856, 0.0, 1300.0);
+
     // Start Task to Get Temperature and Check Faults
     xTaskCreate(&thermocouple_task, "thermocouple_task", 2048, NULL, 5, NULL);
     

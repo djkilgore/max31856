@@ -79,3 +79,4 @@ max31856_thermocoupletype_t thermocouple_get_type(max31856_cfg_t *max31856);
 uint8_t thermocouple_read_fault(max31856_cfg_t *max31856);
 float thermocouple_read_coldjunction(max31856_cfg_t *max31856);
 float thermocouple_read_temperature(max31856_cfg_t *max31856);
+void thermocouple_set_temperature_fault(max31856_cfg_t *max31856, float temp_low, float temp_high);

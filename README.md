@@ -9,3 +9,6 @@ From what I can tell the Max31856 expects dummy bytes or "dead air" in between e
 After two days with a Logic Analyzer hooked up, I decided sending each byte in its own transaction was good enough for now.
 
 https://imgur.com/a/GD3RvAK
+
+After I finished the library, I had to go back and add a read_fast_register() function because the Fault register works like it *should*
+I am going to assume this is some weird hardware issue with this chip until further notice.

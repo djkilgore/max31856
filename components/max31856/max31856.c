@@ -42,6 +42,23 @@ uint8_t max31856_read_register(spi_device_handle_t spi_handle, uint8_t address) 
     return reg_value;
 }
 
+uint8_t max31856_read_fast_register(spi_device_handle_t spi_handle, uint8_t address) {
+    esp_err_t ret;
+    spi_transaction_t spi_transaction;
+    memset( &spi_transaction, 0, sizeof( spi_transaction_t ) );
+    uint8_t tx_data[2] = {address & 0x7F, 0xFF};
+
+    gpio_set_level(PIN_NUM_CS, 0);
+    spi_transaction.flags = SPI_TRANS_USE_RXDATA;
+    spi_transaction.length = 16;
+    spi_transaction.tx_buffer = tx_data;
+    ret = spi_device_transmit(spi_handle, &spi_transaction);
+    ESP_ERROR_CHECK(ret);
+    gpio_set_level(PIN_NUM_CS, 1);
+    uint8_t reg_value = spi_transaction.rx_data[0];
+    return reg_value;
+}
+
 uint16_t max31856_read_register16(spi_device_handle_t spi_handle, uint8_t address) {
     esp_err_t ret;
     spi_transaction_t spi_transaction;
@@ -147,18 +164,16 @@ max31856_thermocoupletype_t thermocouple_get_type(max31856_cfg_t *max31856) {
 
 uint8_t thermocouple_read_fault(max31856_cfg_t *max31856) {
     spi_device_handle_t spi = max31856->spi;
-    uint8_t fault_val = max31856_read_register(spi, MAX31856_SR_REG);
+    uint8_t fault_val = max31856_read_fast_register(spi, MAX31856_SR_REG);
     if (fault_val) {
-        switch(fault_val) {
-            case MAX31856_FAULT_CJRANGE: ESP_LOGI(TAG, "Fault: Cold Junction Range"); break;
-            case MAX31856_FAULT_TCRANGE: ESP_LOGI(TAG, "Fault: Thermocouple Range"); break;
-            case MAX31856_FAULT_CJHIGH: ESP_LOGI(TAG, "Fault: Cold Junction High"); break;
-            case MAX31856_FAULT_CJLOW: ESP_LOGI(TAG, "Fault: Cold Junction Low"); break;
-            case MAX31856_FAULT_TCHIGH: ESP_LOGI(TAG, "Fault: Thermocouple High"); break;
-            case MAX31856_FAULT_TCLOW: ESP_LOGI(TAG, "Fault: Thermocouple Low"); break;
-            case MAX31856_FAULT_OVUV: ESP_LOGI(TAG, "Fault: Over/Under Voltage"); break;
-            case MAX31856_FAULT_OPEN: ESP_LOGI(TAG, "Fault: Thermocouple Open"); break;
-        }
+        if (fault_val & MAX31856_FAULT_CJRANGE) ESP_LOGI(TAG, "Fault: Cold Junction Range");
+        if (fault_val & MAX31856_FAULT_TCRANGE) ESP_LOGI(TAG, "Fault: Thermocouple Range");
+        if (fault_val & MAX31856_FAULT_CJHIGH) ESP_LOGI(TAG, "Fault: Cold Junction High");
+        if (fault_val & MAX31856_FAULT_CJLOW) ESP_LOGI(TAG, "Fault: Cold Junction Low");
+        if (fault_val & MAX31856_FAULT_TCHIGH) ESP_LOGI(TAG, "Fault: Thermocouple High");
+        if (fault_val & MAX31856_FAULT_TCLOW) ESP_LOGI(TAG, "Fault: Thermocouple Low");
+        if (fault_val & MAX31856_FAULT_OVUV) ESP_LOGI(TAG, "Fault: Over/Under Voltage");
+        if (fault_val & MAX31856_FAULT_OPEN) ESP_LOGI(TAG, "Fault: Thermocouple Open");
     }
     max31856->fault = fault_val;
     return fault_val;
@@ -188,6 +203,18 @@ float thermocouple_read_temperature(max31856_cfg_t *max31856) {
     max31856->thermocouple_c = tc_temp_float;
     max31856->thermocouple_f = (1.8 * tc_temp_float) + 32.0;
     return tc_temp_float;
+}
+
+void thermocouple_set_temperature_fault(max31856_cfg_t *max31856, float temp_low, float temp_high) {
+    spi_device_handle_t spi = max31856->spi;
+    temp_low *= 16;
+    temp_high *= 16;
+    int16_t low = temp_low;
+    int16_t high = temp_high;
+    max31856_write_register(spi, MAX31856_LTHFTH_REG, high >> 8);
+    max31856_write_register(spi, MAX31856_LTHFTL_REG, high);
+    max31856_write_register(spi, MAX31856_LTLFTH_REG, low >> 8);
+    max31856_write_register(spi, MAX31856_LTLFTL_REG, low);
 }
 
 max31856_cfg_t max31856_init() {
