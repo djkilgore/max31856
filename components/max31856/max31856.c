@@ -118,6 +118,7 @@ uint32_t max31856_read_register24(spi_device_handle_t spi_handle, uint8_t addres
     ret = spi_device_transmit(spi_handle, &spi_transaction);
     ESP_ERROR_CHECK(ret);
     uint8_t b3 = spi_transaction.rx_data[0];
+    gpio_set_level(PIN_NUM_CS, 1);
 
     uint32_t reg_value = ((b1 << 16) | (b2 << 8) | b3);
     return reg_value;
