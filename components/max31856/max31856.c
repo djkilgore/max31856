@@ -141,6 +141,19 @@ void thermocouple_set_type(max31856_cfg_t *max31856, max31856_thermocoupletype_t
     max31856_write_register(spi, MAX31856_CR1_REG, val);
 }
 
+// Select the mains rejection filter in CR0. When fifty_hz is true the
+// 50/60 Hz notch filter is set to 50 Hz; otherwise the chip-default 60 Hz
+// stays in place. The filter must be configured before any conversion is
+// triggered for the rejection to take effect on the first reading.
+void thermocouple_set_linefreq_filter(max31856_cfg_t *max31856, bool fifty_hz) {
+    spi_device_handle_t spi = max31856->spi;
+    uint8_t val = max31856_read_register(spi, MAX31856_CR0_REG);
+    if (fifty_hz) {
+        val |= 0x01;
+        max31856_write_register(spi, MAX31856_CR0_REG, val);
+    }
+}
+
 max31856_thermocoupletype_t thermocouple_get_type(max31856_cfg_t *max31856) {
     spi_device_handle_t spi = max31856->spi;
     uint8_t val = max31856_read_register(spi, MAX31856_CR1_REG);
@@ -216,6 +229,16 @@ void thermocouple_set_temperature_fault(max31856_cfg_t *max31856, float temp_low
     max31856_write_register(spi, MAX31856_LTHFTL_REG, high);
     max31856_write_register(spi, MAX31856_LTLFTH_REG, low >> 8);
     max31856_write_register(spi, MAX31856_LTLFTL_REG, low);
+}
+
+// Set the cold-junction fault thresholds. Defaults of 100 C high / 0 C low
+// match the operating envelope of the chip's internal reference; callers
+// that need different bounds can write CJHF/CJLF directly with
+// max31856_write_register().
+void thermocouple_set_coldjunction_fault(max31856_cfg_t *max31856) {
+    spi_device_handle_t spi = max31856->spi;
+    max31856_write_register(spi, MAX31856_CJHF_REG, 100);
+    max31856_write_register(spi, MAX31856_CJLF_REG, 0);
 }
 
 max31856_cfg_t max31856_init() {
