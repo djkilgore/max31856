@@ -75,6 +75,14 @@ typedef struct max31856_cfg_t {
   uint8_t fault;
 } max31856_cfg_t;
 
+// Low-level register helpers. The thermocouple_* / max31856_* functions below
+// are the recommended high-level API, but callers driving the chip on a
+// non-default SPI host (e.g. attaching to VSPI_HOST instead of HSPI_HOST and
+// constructing the max31856_cfg_t themselves) need these to apply post-attach
+// register setup like MASK_REG and CR0_REG.
+void    max31856_write_register(spi_device_handle_t spi_handle, uint8_t address, uint8_t data);
+uint8_t max31856_read_register(spi_device_handle_t spi_handle, uint8_t address);
+
 max31856_cfg_t max31856_init();
 void thermocouple_set_type(max31856_cfg_t *max31856, max31856_thermocoupletype_t tc_type);
 void thermocouple_set_linefreq_filter(max31856_cfg_t *max31856, bool fifty_hz);
