@@ -17,6 +17,8 @@ After two days with a Logic Analyzer hooked up, the only difference I could see 
 
 ### Notes on Fault Register Reads
 
-After I finished the library, I had to go back and add a read_fast_register() function because the Fault register works like it *should* in a single transaction and was returning bad data with the hack.
+`read_fast_register()` does a single 16-bit SPI transaction. It writes the address byte, then a dummy `0xFF` to clock in the response. The two-transaction approach used by `read_register()` inserts inter-byte gaps that some chips need to latch a stable register value, but the fault register can be read in one transaction without any gap.
 
-I am going to assume this is some weird hardware issue with this chip until further notice or someone else submits a patch.
+Earlier versions of this function returned `rx_data[0]`. That byte is junk on the MAX31856. The chip cannot drive MISO with the response until it has decoded the address byte, so the first 8 clock cycles read whatever MISO floated to. The actual register value arrives during the dummy byte and lives in `rx_data[1]`.
+
+The function was fixed after a downstream consumer saw the MAX31856 type-K saturation value (1372 °C) on their display instead of the expected NO COIL fault. They traced it to junk coming out of `read_fast_register` and verified the fix on hardware. The earlier "weird hardware issue" framing was wrong. This is standard SPI register-read behaviour.

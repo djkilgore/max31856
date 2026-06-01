@@ -42,6 +42,18 @@ uint8_t max31856_read_register(spi_device_handle_t spi_handle, uint8_t address) 
     return reg_value;
 }
 
+// Single 16-bit SPI transaction. Writes the address byte, then a dummy
+// 0xFF to clock in the chip's response.
+//
+// MISO during the address byte is undefined. The chip cannot drive
+// MISO with the response until it has decoded the address, so rx_data[0]
+// holds whatever MISO floated to during the address phase. The actual
+// register value arrives during the dummy byte and lands in rx_data[1].
+//
+// The previous version of this function returned rx_data[0], which on
+// some boards happened to read usefully because of prior SPI traffic
+// but in general returns junk. See the README's "Notes on Fault
+// Register Reads" section for the longer write-up.
 uint8_t max31856_read_fast_register(spi_device_handle_t spi_handle, uint8_t address) {
     esp_err_t ret;
     spi_transaction_t spi_transaction;
@@ -55,8 +67,7 @@ uint8_t max31856_read_fast_register(spi_device_handle_t spi_handle, uint8_t addr
     ret = spi_device_transmit(spi_handle, &spi_transaction);
     ESP_ERROR_CHECK(ret);
     gpio_set_level(PIN_NUM_CS, 1);
-    uint8_t reg_value = spi_transaction.rx_data[0];
-    return reg_value;
+    return spi_transaction.rx_data[1];
 }
 
 uint16_t max31856_read_register16(spi_device_handle_t spi_handle, uint8_t address) {
